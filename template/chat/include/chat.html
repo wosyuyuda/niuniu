@@ -31,7 +31,7 @@
     <div class="list-group"></div>
     <div>
         <div class="online-container">
-            <div class="online-title">当前在线</div>
+            <div class="online-title">当前在线11</div>
             <hr>
             <div class="online-list"></div>
         </div>
@@ -84,11 +84,13 @@
             };
             // ws连接关闭
             ws.onclose = function () {
-                if (ws) {
+                //重新链接
+                ws  = new WebSocket(url);
+                /* if (ws) {
                     ws.close();
                     ws = null;
                 }
-                showError("WebSocket Server 连接关闭！");
+                showError("WebSocket Server 连接关闭！"); */
             };
             // ws连接错误
             ws.onerror = function () {
