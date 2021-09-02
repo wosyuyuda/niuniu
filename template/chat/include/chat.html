@@ -85,7 +85,7 @@
             // ws连接关闭
             ws.onclose = function () {
                 //重新链接
-                ws  = new WebSocket(url);
+                ws  = new ReconnectingWebSocket(url);
                 /* if (ws) {
                     ws.close();
                     ws = null;
