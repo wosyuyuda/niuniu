@@ -2,9 +2,12 @@ package api
 
 import (
 	"fmt"
+
 	"github.com/gogf/gf-demos/app/model"
 	"github.com/gogf/gf/errors/gerror"
 	"github.com/gogf/gf/util/gconv"
+
+	"time"
 
 	"github.com/gogf/gf/container/garray"
 	"github.com/gogf/gf/container/gmap"
@@ -14,7 +17,6 @@ import (
 	"github.com/gogf/gf/frame/g"
 	"github.com/gogf/gf/net/ghttp"
 	"github.com/gogf/gf/os/gcache"
-	"time"
 )
 
 // 聊天管理器
@@ -28,10 +30,24 @@ const (
 )
 
 var (
-	users = gmap.New(true)       // 使用默认的并发安全Map
-	names = gset.NewStrSet(true) // 使用并发安全的Set，用以用户昵称唯一性校验
-	cache = gcache.New()         // 使用特定的缓存对象，不使用全局缓存对象
+	users   = gmap.New(true)       // 使用默认的并发安全Map
+	names   = gset.NewStrSet(true) // 使用并发安全的Set，用以用户昵称唯一性校验
+	cache   = gcache.New()         // 使用特定的缓存对象，不使用全局缓存对象
+	basepai = []string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"}
+	color   = []string{"黑桃", "红桃", "梅花", "方块"}
+	kin     = []string{"大王", "小王"}
+	allpai  = []string{}
 )
+
+//初始化全部的牌
+func paiinit() {
+	for _, v := range color {
+		for _, i := range basepai {
+			allpai = append(allpai, v+i)
+		}
+	}
+	allpai = append(allpai, kin...)
+}
 
 // @summary 聊天室首页
 // @description 聊天室首页，只显示模板内容。如果当前用户未登录，那么引导跳转到名称设置页面。
@@ -156,6 +172,7 @@ func (a *chatApi) WebSocket(r *ghttp.Request) {
 			}
 			// 有消息时，群发消息
 			if msg.Data != nil {
+
 				if err = a.writeGroup(
 					model.ChatMsg{
 						Type: "send",
