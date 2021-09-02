@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"math/rand"
 
 	"github.com/gogf/gf-demos/app/model"
 	"github.com/gogf/gf/errors/gerror"
@@ -33,20 +34,24 @@ var (
 	users   = gmap.New(true)       // 使用默认的并发安全Map
 	names   = gset.NewStrSet(true) // 使用并发安全的Set，用以用户昵称唯一性校验
 	cache   = gcache.New()         // 使用特定的缓存对象，不使用全局缓存对象
-	basepai = []string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"}
+	basepai = []string{"A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"}
 	color   = []string{"黑桃", "红桃", "梅花", "方块"}
 	kin     = []string{"大王", "小王"}
 	allpai  = []string{}
+
+	paiusers = gmap.New(true) // 使用默认的并发安全Map
+	//painame  = gset.NewStrSet(true) // 使用并发安全的Set，用以用户昵称唯一性校验
 )
 
 //初始化全部的牌
-func paiinit() {
+func paiinit() []string {
 	for _, v := range color {
 		for _, i := range basepai {
 			allpai = append(allpai, v+i)
 		}
 	}
 	allpai = append(allpai, kin...)
+	return allpai
 }
 
 // @summary 聊天室首页
@@ -172,8 +177,25 @@ func (a *chatApi) WebSocket(r *ghttp.Request) {
 			}
 			// 有消息时，群发消息
 			if msg.Data != nil {
+				fmt.Println(gconv.String(msg.Data))
+				if gconv.String(msg.Data) == "111" {
+					//如果用户输入111,那么返回
+					paiusers.Set(ws, name) //把用户加到组里面,如果人数满3人,就开始发牌,并且清空原来的数组
+					if paiusers.Size() == 2 {
+						//开始发牌
+						if err = a.writeGroup1(); err != nil {
+							g.Log().Error(err)
+						}
+					} else if err = a.writeGroup(
+						model.ChatMsg{
+							Type: "send",
+							Data: ghtml.SpecialChars("当前人数" + gconv.String(paiusers.Size())),
+							From: ghtml.SpecialChars(msg.From),
+						}); err != nil {
+						g.Log().Error(err)
+					}
 
-				if err = a.writeGroup(
+				} else if err = a.writeGroup(
 					model.ChatMsg{
 						Type: "send",
 						Data: ghtml.SpecialChars(gconv.String(msg.Data)),
@@ -184,6 +206,62 @@ func (a *chatApi) WebSocket(r *ghttp.Request) {
 			}
 		}
 	}
+}
+
+//进入发牌
+func (a *chatApi) writeGroup1() error {
+	pai := paiinit()
+	pai1, pai := fapai(pai)
+	pai2, pai := fapai(pai)
+	n := 0
+	fmt.Printf("全部的牌是%+v", pai)
+	fmt.Println(paiusers.Size())
+	msg := model.ChatMsg{
+		Type: "send",
+		Data: pai1,
+		From: ghtml.SpecialChars("官方发牌员"),
+	}
+	msg1 := model.ChatMsg{
+		Type: "send",
+		Data: pai2,
+		From: ghtml.SpecialChars("官方发牌员"),
+	}
+	b, _ := gjson.Encode(msg)
+	b1, err := gjson.Encode(msg1)
+
+	mm := [][]byte{b, b1}
+	if err != nil {
+		return err
+	}
+	paiusers.RLockFunc(func(m map[interface{}]interface{}) {
+		for user := range m {
+			user.(*ghttp.WebSocket).WriteMessage(ghttp.WS_MSG_TEXT, []byte(mm[n]))
+			n++
+		}
+	})
+	paiusers.Clear()
+	return nil
+}
+
+func fapai(pai []string) (uspai []string, newpai []string) {
+	var num = 1
+	for num <= 5 {
+		//获取牌的长度,得到一个随机数
+		i := ra(len(pai))
+		num++
+		uspai = append(uspai, pai[i])
+		pai = append(pai[:i], pai[i+1:]...)
+		fmt.Println(num)
+	}
+	newpai = pai
+	return
+}
+
+//得到一个随机数
+func ra(i int) (j int) {
+	rand.Seed(time.Now().UnixNano())
+	j = rand.Intn(i)
+	return
 }
 
 // 向客户端写入消息。
