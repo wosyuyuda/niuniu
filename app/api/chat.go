@@ -387,7 +387,8 @@ func fourAndFive(ints []int) []int {
 	for i := 0; i < le-2; i++ {
 		for j := i + 1; j < le-1; j++ {
 			for o := j + 1; o < le; o++ {
-				if ints[i]+ints[j]+ints[o] == 10 {
+				n := ints[i] + ints[j] + ints[o]
+				if n == 10 || n == 20 {
 					ints = append(ints[:o], ints[o+1:]...)
 					ints = append(ints[:j], ints[j+1:]...)
 					ints = append(ints[:i], ints[i+1:]...)
