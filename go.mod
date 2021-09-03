@@ -1,10 +1,10 @@
-module github.com/gogf/gf-demos
+module niuniu
 
 go 1.11
 
 require (
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gogf/gf v1.16.1
-	github.com/gogf/swagger v1.2.0
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/grokify/html-strip-tags-go v0.0.0-20200322061010-ea0c1cf2f119 // indirect
 	github.com/kr/text v0.2.0 // indirect

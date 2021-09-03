@@ -5,7 +5,7 @@
 package dao
 
 /* import (
-	"github.com/gogf/gf-demos/app/dao/internal"
+	"niuniu/app/dao/internal"
 )
 
 // userDao is the manager for logic model data accessing

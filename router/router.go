@@ -1,8 +1,9 @@
 package router
 
 import (
-	"github.com/gogf/gf-demos/app/api"
-	"github.com/gogf/gf-demos/app/service"
+	"niuniu/app/api"
+	"niuniu/app/service"
+
 	"github.com/gogf/gf/frame/g"
 	"github.com/gogf/gf/net/ghttp"
 )

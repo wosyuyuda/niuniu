@@ -10,7 +10,7 @@ This repo implements some demos using GoFrame.
 ### 1. You need a go development environment setup before everything starts taking off.
 ### 2. Use `git clone` cloing the repo to your local folder. 
 ```
-git clone https://github.com/gogf/gf-demos
+git clone https://niuniu
 ```
 
 ### 3. Import `document/sql/create.sql` to your database. 
@@ -25,29 +25,29 @@ Update `config.toml` according to your local configurations if necessary.
 ```
   SERVER  | DOMAIN  | ADDRESS | METHOD |        ROUTE        |                          HANDLER                          |                                                  MIDDLEWARE                                                    
 ----------|---------|---------|--------|---------------------|-----------------------------------------------------------|----------------------------------------------------------------------------------------------------------------
-  default | default | :8199   | ALL    | /chat               | github.com/gogf/gf-demos/app/api.(*apiChat).Index         | service.(*serviceMiddleware).Ctx-fm,service.(*serviceMiddleware).CORS-fm                                       
+  default | default | :8199   | ALL    | /chat               | niuniu/app/api.(*apiChat).Index         | service.(*serviceMiddleware).Ctx-fm,service.(*serviceMiddleware).CORS-fm                                       
 ----------|---------|---------|--------|---------------------|-----------------------------------------------------------|----------------------------------------------------------------------------------------------------------------
-  default | default | :8199   | ALL    | /chat/index         | github.com/gogf/gf-demos/app/api.(*apiChat).Index         | service.(*serviceMiddleware).Ctx-fm,service.(*serviceMiddleware).CORS-fm                                       
+  default | default | :8199   | ALL    | /chat/index         | niuniu/app/api.(*apiChat).Index         | service.(*serviceMiddleware).Ctx-fm,service.(*serviceMiddleware).CORS-fm                                       
 ----------|---------|---------|--------|---------------------|-----------------------------------------------------------|----------------------------------------------------------------------------------------------------------------
-  default | default | :8199   | ALL    | /chat/setname       | github.com/gogf/gf-demos/app/api.(*apiChat).SetName       | service.(*serviceMiddleware).Ctx-fm,service.(*serviceMiddleware).CORS-fm                                       
+  default | default | :8199   | ALL    | /chat/setname       | niuniu/app/api.(*apiChat).SetName       | service.(*serviceMiddleware).Ctx-fm,service.(*serviceMiddleware).CORS-fm                                       
 ----------|---------|---------|--------|---------------------|-----------------------------------------------------------|----------------------------------------------------------------------------------------------------------------
-  default | default | :8199   | ALL    | /chat/websocket     | github.com/gogf/gf-demos/app/api.(*apiChat).WebSocket     | service.(*serviceMiddleware).Ctx-fm,service.(*serviceMiddleware).CORS-fm                                       
+  default | default | :8199   | ALL    | /chat/websocket     | niuniu/app/api.(*apiChat).WebSocket     | service.(*serviceMiddleware).Ctx-fm,service.(*serviceMiddleware).CORS-fm                                       
 ----------|---------|---------|--------|---------------------|-----------------------------------------------------------|----------------------------------------------------------------------------------------------------------------
   default | default | :8199   | ALL    | /swagger/*          | github.com/gogf/swagger.(*Swagger).Install.func1.1        | HOOK_BEFORE_SERVE                                                                                              
 ----------|---------|---------|--------|---------------------|-----------------------------------------------------------|----------------------------------------------------------------------------------------------------------------
-  default | default | :8199   | ALL    | /user/checknickname | github.com/gogf/gf-demos/app/api.(*apiUser).CheckNickName | service.(*serviceMiddleware).Ctx-fm,service.(*serviceMiddleware).CORS-fm                                       
+  default | default | :8199   | ALL    | /user/checknickname | niuniu/app/api.(*apiUser).CheckNickName | service.(*serviceMiddleware).Ctx-fm,service.(*serviceMiddleware).CORS-fm                                       
 ----------|---------|---------|--------|---------------------|-----------------------------------------------------------|----------------------------------------------------------------------------------------------------------------
-  default | default | :8199   | ALL    | /user/checkpassport | github.com/gogf/gf-demos/app/api.(*apiUser).CheckPassport | service.(*serviceMiddleware).Ctx-fm,service.(*serviceMiddleware).CORS-fm                                       
+  default | default | :8199   | ALL    | /user/checkpassport | niuniu/app/api.(*apiUser).CheckPassport | service.(*serviceMiddleware).Ctx-fm,service.(*serviceMiddleware).CORS-fm                                       
 ----------|---------|---------|--------|---------------------|-----------------------------------------------------------|----------------------------------------------------------------------------------------------------------------
-  default | default | :8199   | ALL    | /user/issignedin    | github.com/gogf/gf-demos/app/api.(*apiUser).IsSignedIn    | service.(*serviceMiddleware).Ctx-fm,service.(*serviceMiddleware).CORS-fm                                       
+  default | default | :8199   | ALL    | /user/issignedin    | niuniu/app/api.(*apiUser).IsSignedIn    | service.(*serviceMiddleware).Ctx-fm,service.(*serviceMiddleware).CORS-fm                                       
 ----------|---------|---------|--------|---------------------|-----------------------------------------------------------|----------------------------------------------------------------------------------------------------------------
-  default | default | :8199   | ALL    | /user/profile       | github.com/gogf/gf-demos/app/api.(*apiUser).Profile-fm    | service.(*serviceMiddleware).Ctx-fm,service.(*serviceMiddleware).CORS-fm,service.(*serviceMiddleware).Auth-fm  
+  default | default | :8199   | ALL    | /user/profile       | niuniu/app/api.(*apiUser).Profile-fm    | service.(*serviceMiddleware).Ctx-fm,service.(*serviceMiddleware).CORS-fm,service.(*serviceMiddleware).Auth-fm  
 ----------|---------|---------|--------|---------------------|-----------------------------------------------------------|----------------------------------------------------------------------------------------------------------------
-  default | default | :8199   | ALL    | /user/signin        | github.com/gogf/gf-demos/app/api.(*apiUser).SignIn        | service.(*serviceMiddleware).Ctx-fm,service.(*serviceMiddleware).CORS-fm                                       
+  default | default | :8199   | ALL    | /user/signin        | niuniu/app/api.(*apiUser).SignIn        | service.(*serviceMiddleware).Ctx-fm,service.(*serviceMiddleware).CORS-fm                                       
 ----------|---------|---------|--------|---------------------|-----------------------------------------------------------|----------------------------------------------------------------------------------------------------------------
-  default | default | :8199   | ALL    | /user/signout       | github.com/gogf/gf-demos/app/api.(*apiUser).SignOut       | service.(*serviceMiddleware).Ctx-fm,service.(*serviceMiddleware).CORS-fm                                       
+  default | default | :8199   | ALL    | /user/signout       | niuniu/app/api.(*apiUser).SignOut       | service.(*serviceMiddleware).Ctx-fm,service.(*serviceMiddleware).CORS-fm                                       
 ----------|---------|---------|--------|---------------------|-----------------------------------------------------------|----------------------------------------------------------------------------------------------------------------
-  default | default | :8199   | ALL    | /user/signup        | github.com/gogf/gf-demos/app/api.(*apiUser).SignUp        | service.(*serviceMiddleware).Ctx-fm,service.(*serviceMiddleware).CORS-fm                                       
+  default | default | :8199   | ALL    | /user/signup        | niuniu/app/api.(*apiUser).SignUp        | service.(*serviceMiddleware).Ctx-fm,service.(*serviceMiddleware).CORS-fm                                       
 ----------|---------|---------|--------|---------------------|-----------------------------------------------------------|----------------------------------------------------------------------------------------------------------------
 ```
 

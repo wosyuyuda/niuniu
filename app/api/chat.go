@@ -4,13 +4,15 @@ import (
 	"fmt"
 	"math/rand"
 
-	"github.com/gogf/gf-demos/app/model"
+	"niuniu/app/model"
+
 	"github.com/gogf/gf/errors/gerror"
 	"github.com/gogf/gf/util/gconv"
 
 	"time"
 
-	"github.com/gogf/gf-demos/library/response"
+	"niuniu/library/response"
+
 	"github.com/gogf/gf/container/garray"
 	"github.com/gogf/gf/container/gmap"
 	"github.com/gogf/gf/container/gset"

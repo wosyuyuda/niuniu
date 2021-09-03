@@ -1,8 +1,9 @@
 package main
 
 import (
-	_ "github.com/gogf/gf-demos/boot"
-	_ "github.com/gogf/gf-demos/router"
+	_ "niuniu/boot"
+	_ "niuniu/router"
+
 	"github.com/gogf/gf/frame/g"
 )
 

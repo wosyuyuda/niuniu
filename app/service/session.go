@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	"github.com/gogf/gf-demos/app/model"
+	"niuniu/app/model"
 )
 
 // Session管理服务

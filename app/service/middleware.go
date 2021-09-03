@@ -1,7 +1,8 @@
 package service
 
 import (
-	"github.com/gogf/gf-demos/app/model"
+	"niuniu/app/model"
+
 	"github.com/gogf/gf/net/ghttp"
 )
 

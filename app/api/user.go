@@ -1,9 +1,9 @@
 package api
 
 /* import (
-	"github.com/gogf/gf-demos/app/model"
-	"github.com/gogf/gf-demos/app/service"
-	"github.com/gogf/gf-demos/library/response"
+	"niuniu/app/model"
+	"niuniu/app/service"
+	"niuniu/library/response"
 	"github.com/gogf/gf/net/ghttp"
 	"github.com/gogf/gf/util/gconv"
 )

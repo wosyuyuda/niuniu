@@ -4,8 +4,8 @@ package service
 	"context"
 	"errors"
 	"fmt"
-	"github.com/gogf/gf-demos/app/dao"
-	"github.com/gogf/gf-demos/app/model"
+	"niuniu/app/dao"
+	"niuniu/app/model"
 )
 
 // 中间件管理服务
