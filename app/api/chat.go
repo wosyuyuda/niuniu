@@ -191,8 +191,9 @@ func (a *chatApi) WebSocket(r *ghttp.Request) {
 			}
 			// 有消息时，群发消息
 			if msg.Data != nil {
+				dd := gconv.String(msg.Data)
 				//fmt.Println(gconv.String(msg.Data))
-				if gconv.String(msg.Data) == "111" {
+				if dd == "111" && paiusers.Size() != 2 {
 					//如果用户输入111,那么返回
 					paiusers.Set(ws, name) //把用户加到组里面,如果人数满3人,就开始发牌,并且清空原来的数组
 					if paiusers.Size() == 2 {
@@ -200,6 +201,7 @@ func (a *chatApi) WebSocket(r *ghttp.Request) {
 						if err = a.writeGroup1(); err != nil {
 							g.Log().Error(err)
 						}
+						//a.ending()
 					} else if err = a.writeGroup(
 						model.ChatMsg{
 							Type: "send",
@@ -209,15 +211,15 @@ func (a *chatApi) WebSocket(r *ghttp.Request) {
 						g.Log().Error(err)
 					}
 
+				} else if dd == "结果" || dd == "结束" {
+					a.ending()
 				} else if err = a.writeGroup(
 					model.ChatMsg{
 						Type: "send",
-						Data: ghtml.SpecialChars(gconv.String(msg.Data)),
+						Data: ghtml.SpecialChars(dd),
 						From: ghtml.SpecialChars(msg.From),
 					}); err != nil {
 					g.Log().Error(err)
-				} else if gconv.String(msg.Data) == "结果" {
-					a.ending()
 				}
 			}
 		}
@@ -236,69 +238,101 @@ func (a *chatApi) writeGroup1() error {
 
 			uspai, newpai := fapai(pai)
 			//把牌存个十分钟进缓存
+			bo, _ := cache.Contains("pai" + name)
+			if bo {
+				cache.Remove("pai" + name)
+			}
+			num := winAndLos(gconv.Strings(uspai))
+			st := gconv.String(uspai)
 			cache.Set("pai"+name, uspai, 1000*time.Minute)
 			msg := model.ChatMsg{
 				Type: "send",
-				Data: uspai,
+				Data: st + niu(num),
 				From: ghtml.SpecialChars("官方发牌员"),
 			}
 			b, _ = gjson.Encode(msg)
 			pai = newpai
 
 			user.(*ghttp.WebSocket).WriteMessage(ghttp.WS_MSG_TEXT, b)
+
 		}
 	})
-	//paiusers.Clear()
+	paiusers.Clear()
 	return nil
+}
+
+func niu(num int8) string {
+
+	str := ""
+	switch num {
+	case 0:
+		str = "没有牛"
+	case 10, 11, 12:
+		str = "牛牛"
+	default:
+		str = fmt.Sprintf("牛%d", num)
+	}
+	return str
 }
 
 //获取发牌结果
 func (a *chatApi) ending() (err error) {
 	paiusers.RLockFunc(func(m map[interface{}]interface{}) {
 		//这里加一个定义谁输谁赢,赢多少倍的数据,
-		var allwi win
+
+		//获取每个用户的点数
 		for user, v := range m {
 			fmt.Println(v)
 			name := gconv.String(v)
 			//获取缓存中的牌
-			pai, _ := cache.Get(name)
-			wi := win{
+			pai, _ := cache.Get("pai" + name)
+			/* wi := win{
 				Name: name,
 				Pai:  gconv.Strings(pai),
 				User: user,
+			} */
+			fmt.Println(pai)
+			num := winAndLos(gconv.Strings(pai))
+			msg := model.ChatMsg{
+				Type: "send",
+				Data: niu(num),
+				From: ghtml.SpecialChars("官方发牌员"),
 			}
-			winAndLos(&allwi, &wi)
+			b, _ := gjson.Encode(msg)
+			user.(*ghttp.WebSocket).WriteMessage(ghttp.WS_MSG_TEXT, b)
+
 		}
+
 	})
+	paiusers.Clear()
 	return
 }
 
 //判断胜负,all是胜者的,win是个体的
-func winAndLos(allwin *win, wi *win) {
+func winAndLos(pai []string) int8 {
 	//拿到具体的牌后,开始计算倍数与点数
 	//
 	jin := 0
-	for _, v := range wi.Pai {
+	painum := []int{}
+	num := int8(0)
+	for _, v := range pai {
 		d := dian(v)
 
-		wi.PaiNum = append(wi.PaiNum, d)
+		painum = append(painum, d)
 		if d > 10 {
 			jin++
 			d = 10
 		}
-		wi.Num += int8(d)
+		num += int8(d)
 	}
-	dians := wi.Num % 10
-	fmt.Printf(wi.Name+"的点数是%d", dians)
-
 	//五朵金花的
 	if jin == 5 {
-		wi.Num = 11
+		num = 11
 	} else {
 		//开始正式计算点数
-		wi.Num = godian(wi.PaiNum)
+		num = godian(painum)
 	}
-
+	return num
 }
 
 //开始计算是否为点数与牛牛
@@ -312,15 +346,61 @@ func godian(ints []int) int8 {
 	}
 	//把新的低于10个点的用算法计算出点数
 	//如果剩下一张,那么直接返回一张的点
-	le := len(newints)
-	if le == 1 {
-		return gconv.Int8(newints[0])
-	} else if le == 2 {
-		d := newints[0] + newints[1]
-		return gconv.Int8(d % 10)
-	}
+
 	//如果有三四五张怎么计算点数
-	return 0
+	return gconv.Int8(word(newints))
+}
+
+func word(newints []int) int {
+	le := len(newints)
+	switch le {
+	case 1:
+		return newints[0]
+	case 2:
+		n := (newints[0] + newints[1]) % 10
+		if n == 0 {
+			return 10
+		}
+		return n
+	default:
+		//如果是有四五张,那么再加一个循环计算
+		in := fourAndFive(newints)
+		if len(in) > 2 {
+			return 0
+		}
+		return word(in)
+	}
+}
+
+//把两两相加,三个相加为10的处理掉
+func fourAndFive(ints []int) []int {
+	//先检查一下有没有两两相加为十的
+	le := len(ints)
+	for i := 0; i < le; i++ {
+		for j := i + 1; j < le; j++ {
+			if ints[i]+ints[j] == 10 {
+				le -= 2
+				ints = append(ints[:j], ints[j+1:]...)
+				ints = append(ints[:i], ints[i+1:]...)
+				i--
+				break
+			}
+		}
+	}
+	for i := 0; i < le-2; i++ {
+		for j := i + 1; j < le-1; j++ {
+			for o := j + 1; o < le; o++ {
+				if ints[i]+ints[j]+ints[o] == 10 {
+					ints = append(ints[:o], ints[o+1:]...)
+					ints = append(ints[:j], ints[j+1:]...)
+					ints = append(ints[:i], ints[i+1:]...)
+					i = le
+					break
+				}
+			}
+		}
+	}
+	return ints
 }
 
 //1-10为具体点数,11 12 13分别为jqk为花
