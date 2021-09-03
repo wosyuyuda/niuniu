@@ -30,6 +30,18 @@ const (
 	sendInterval = time.Second
 )
 
+type win struct {
+	Name      string
+	Num       int8        //点数,0-9为点数,10为牛牛,11为五朵金花
+	WinAndLos int8        //输还是赢,1胜,2负
+	Multiple  int8        //倍数
+	Max       string      //最大的牌
+	MaxNum    int         //最大牌的数值,52个
+	Pai       []string    //手上具体牌的数据
+	PaiNum    []int       //每个牌的点数
+	User      interface{} //具体的用户,用来发送消息的接口
+}
+
 var (
 	users   = gmap.New(true)       // 使用默认的并发安全Map
 	names   = gset.NewStrSet(true) // 使用并发安全的Set，用以用户昵称唯一性校验
@@ -43,14 +55,16 @@ var (
 	//painame  = gset.NewStrSet(true) // 使用并发安全的Set，用以用户昵称唯一性校验
 )
 
-//初始化全部的牌
-func paiinit() []string {
+//初始化全部的牌,isd判断是否包含大小王,默认包含,如果值为1
+func paiinit(isd ...int) []string {
 	for _, v := range color {
 		for _, i := range basepai {
 			allpai = append(allpai, v+i)
 		}
 	}
-	allpai = append(allpai, kin...)
+	if len(isd) == 0 {
+		allpai = append(allpai, kin...)
+	}
 	return allpai
 }
 
@@ -177,7 +191,7 @@ func (a *chatApi) WebSocket(r *ghttp.Request) {
 			}
 			// 有消息时，群发消息
 			if msg.Data != nil {
-				fmt.Println(gconv.String(msg.Data))
+				//fmt.Println(gconv.String(msg.Data))
 				if gconv.String(msg.Data) == "111" {
 					//如果用户输入111,那么返回
 					paiusers.Set(ws, name) //把用户加到组里面,如果人数满3人,就开始发牌,并且清空原来的数组
@@ -202,6 +216,8 @@ func (a *chatApi) WebSocket(r *ghttp.Request) {
 						From: ghtml.SpecialChars(msg.From),
 					}); err != nil {
 					g.Log().Error(err)
+				} else if gconv.String(msg.Data) == "结果" {
+					a.ending()
 				}
 			}
 		}
@@ -210,40 +226,125 @@ func (a *chatApi) WebSocket(r *ghttp.Request) {
 
 //进入发牌
 func (a *chatApi) writeGroup1() error {
-	pai := paiinit()
-	pai1, pai := fapai(pai)
-	pai2, pai := fapai(pai)
-	n := 0
-	fmt.Printf("全部的牌是%+v", pai)
-	fmt.Println(paiusers.Size())
-	msg := model.ChatMsg{
-		Type: "send",
-		Data: pai1,
-		From: ghtml.SpecialChars("官方发牌员"),
-	}
-	msg1 := model.ChatMsg{
-		Type: "send",
-		Data: pai2,
-		From: ghtml.SpecialChars("官方发牌员"),
-	}
-	b, _ := gjson.Encode(msg)
-	b1, err := gjson.Encode(msg1)
-
-	mm := [][]byte{b, b1}
-	if err != nil {
-		return err
-	}
+	pai := paiinit(1) //拿到 去掉大小王的牌
+	var b []byte
 	paiusers.RLockFunc(func(m map[interface{}]interface{}) {
-		for user := range m {
-			user.(*ghttp.WebSocket).WriteMessage(ghttp.WS_MSG_TEXT, []byte(mm[n]))
-			n++
+		fmt.Println(m)
+		for user, v := range m {
+			fmt.Println(v)
+			name := gconv.String(v)
+
+			uspai, newpai := fapai(pai)
+			//把牌存个十分钟进缓存
+			cache.Set("pai"+name, uspai, 1000*time.Minute)
+			msg := model.ChatMsg{
+				Type: "send",
+				Data: uspai,
+				From: ghtml.SpecialChars("官方发牌员"),
+			}
+			b, _ = gjson.Encode(msg)
+			pai = newpai
+
+			user.(*ghttp.WebSocket).WriteMessage(ghttp.WS_MSG_TEXT, b)
 		}
 	})
-	paiusers.Clear()
+	//paiusers.Clear()
 	return nil
 }
 
+//获取发牌结果
+func (a *chatApi) ending() (err error) {
+	paiusers.RLockFunc(func(m map[interface{}]interface{}) {
+		//这里加一个定义谁输谁赢,赢多少倍的数据,
+		var allwi win
+		for user, v := range m {
+			fmt.Println(v)
+			name := gconv.String(v)
+			//获取缓存中的牌
+			pai, _ := cache.Get(name)
+			wi := win{
+				Name: name,
+				Pai:  gconv.Strings(pai),
+				User: user,
+			}
+			winAndLos(&allwi, &wi)
+		}
+	})
+	return
+}
+
+//判断胜负,all是胜者的,win是个体的
+func winAndLos(allwin *win, wi *win) {
+	//拿到具体的牌后,开始计算倍数与点数
+	//
+	jin := 0
+	for _, v := range wi.Pai {
+		d := dian(v)
+
+		wi.PaiNum = append(wi.PaiNum, d)
+		if d > 10 {
+			jin++
+			d = 10
+		}
+		wi.Num += int8(d)
+	}
+	dians := wi.Num % 10
+	fmt.Printf(wi.Name+"的点数是%d", dians)
+
+	//五朵金花的
+	if jin == 5 {
+		wi.Num = 11
+	} else {
+		//开始正式计算点数
+		wi.Num = godian(wi.PaiNum)
+	}
+
+}
+
+//开始计算是否为点数与牛牛
+func godian(ints []int) int8 {
+	var newints []int
+	//五张牌,第一轮循环,先把花色去掉
+	for _, v := range ints {
+		if v < 10 {
+			newints = append(newints, v)
+		}
+	}
+	//把新的低于10个点的用算法计算出点数
+	//如果剩下一张,那么直接返回一张的点
+	le := len(newints)
+	if le == 1 {
+		return gconv.Int8(newints[0])
+	} else if le == 2 {
+		d := newints[0] + newints[1]
+		return gconv.Int8(d % 10)
+	}
+	//如果有三四五张怎么计算点数
+	return 0
+}
+
+//1-10为具体点数,11 12 13分别为jqk为花
+func dian(s string) (d int) {
+	rs := []rune(s)
+	switch string(rs[2:]) {
+	case "A":
+		d = 1
+	case "J":
+		d = 11
+	case "Q":
+		d = 12
+	case "K":
+		d = 13
+	default:
+		d = gconv.Int(string(rs[2:]))
+
+	}
+	return
+}
+
+//发五张牌,并且把剩下的牌返回回去,应该加一个如果剩余15张以后直接按序去发就好了.
 func fapai(pai []string) (uspai []string, newpai []string) {
+	//var uspai []string
 	var num = 1
 	for num <= 5 {
 		//获取牌的长度,得到一个随机数
@@ -251,9 +352,10 @@ func fapai(pai []string) (uspai []string, newpai []string) {
 		num++
 		uspai = append(uspai, pai[i])
 		pai = append(pai[:i], pai[i+1:]...)
-		fmt.Println(num)
+		//fmt.Println(num)
 	}
 	newpai = pai
+
 	return
 }
 
