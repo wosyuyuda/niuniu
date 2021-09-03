@@ -4,7 +4,7 @@
 
 package dao
 
-import (
+/* import (
 	"github.com/gogf/gf-demos/app/dao/internal"
 )
 
@@ -21,5 +21,5 @@ var (
 		internal.User,
 	}
 )
-
+*/
 // Fill with you ideas below.

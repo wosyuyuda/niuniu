@@ -1,6 +1,6 @@
 package api
 
-import (
+/* import (
 	"github.com/gogf/gf-demos/app/model"
 	"github.com/gogf/gf-demos/app/service"
 	"github.com/gogf/gf-demos/library/response"
@@ -125,3 +125,4 @@ func (a *userApi) CheckNickName(r *ghttp.Request) {
 func (a *userApi) Profile(r *ghttp.Request) {
 	response.JsonExit(r, 0, "", service.User.GetProfile(r.Context()))
 }
+*/

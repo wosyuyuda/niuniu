@@ -4,7 +4,7 @@
 
 package internal
 
-import (
+/* import (
 	"github.com/gogf/gf/database/gdb"
 	"github.com/gogf/gf/frame/g"
 	"github.com/gogf/gf/frame/gmvc"
@@ -45,3 +45,4 @@ var (
 		},
 	}
 )
+*/

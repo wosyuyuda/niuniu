@@ -1,6 +1,6 @@
 package boot
 
-import (
+/* import (
 	_ "github.com/gogf/gf-demos/packed"
 
 	"github.com/gogf/gf/frame/g"
@@ -12,3 +12,4 @@ func init() {
 	s := g.Server()
 	s.Plugin(&swagger.Swagger{})
 }
+*/

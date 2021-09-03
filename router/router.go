@@ -16,10 +16,10 @@ func init() {
 			service.Middleware.CORS,
 		)
 		group.ALL("/chat", api.Chat)
-		group.ALL("/user", api.User)
+		/* group.ALL("/user", api.User)
 		group.Group("/", func(group *ghttp.RouterGroup) {
 			group.Middleware(service.Middleware.Auth)
 			group.ALL("/user/profile", api.User.Profile)
-		})
+		}) */
 	})
 }

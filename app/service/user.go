@@ -1,6 +1,6 @@
 package service
 
-import (
+/* import (
 	"context"
 	"errors"
 	"fmt"
@@ -89,3 +89,4 @@ func (s *userService) CheckNickName(nickname string) bool {
 func (s *userService) GetProfile(ctx context.Context) *model.User {
 	return Session.GetUser(ctx)
 }
+*/
