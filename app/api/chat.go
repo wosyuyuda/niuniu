@@ -10,6 +10,7 @@ import (
 
 	"time"
 
+	"github.com/gogf/gf-demos/library/response"
 	"github.com/gogf/gf/container/garray"
 	"github.com/gogf/gf/container/gmap"
 	"github.com/gogf/gf/container/gset"
@@ -123,6 +124,10 @@ func (a *chatApi) WebSocket(r *ghttp.Request) {
 		ws  *ghttp.WebSocket
 		err error
 	)
+	if users.Size() > 3 {
+		response.JsonExit(r, 0, "ok")
+		return
+	}
 	ws, err = r.WebSocket()
 	if err != nil {
 		g.Log().Error(err)
