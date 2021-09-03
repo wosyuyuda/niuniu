@@ -376,17 +376,6 @@ func word(newints []int) int {
 func fourAndFive(ints []int) []int {
 	//先检查一下有没有两两相加为十的
 	le := len(ints)
-	for i := 0; i < le; i++ {
-		for j := i + 1; j < le; j++ {
-			if ints[i]+ints[j] == 10 {
-				le -= 2
-				ints = append(ints[:j], ints[j+1:]...)
-				ints = append(ints[:i], ints[i+1:]...)
-				i--
-				break
-			}
-		}
-	}
 	for i := 0; i < le-2; i++ {
 		for j := i + 1; j < le-1; j++ {
 			for o := j + 1; o < le; o++ {
@@ -400,6 +389,18 @@ func fourAndFive(ints []int) []int {
 			}
 		}
 	}
+	for i := 0; i < le; i++ {
+		for j := i + 1; j < le; j++ {
+			if ints[i]+ints[j] == 10 {
+				le -= 2
+				ints = append(ints[:j], ints[j+1:]...)
+				ints = append(ints[:i], ints[i+1:]...)
+				i--
+				break
+			}
+		}
+	}
+
 	return ints
 }
 
