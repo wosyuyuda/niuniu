@@ -28,6 +28,7 @@ type chatApi struct{}
 const (
 	// SendInterval 允许客户端发送聊天消息的间隔时间
 	sendInterval = time.Second
+	CachePaiName = "pai"
 )
 
 type win struct {
@@ -238,9 +239,9 @@ func (a *chatApi) writeGroup1() error {
 
 			uspai, newpai := fapai(pai)
 			//把牌存个十分钟进缓存
-			bo, _ := cache.Contains("pai" + name)
+			bo, _ := cache.Contains(CachePaiName + name)
 			if bo {
-				cache.Remove("pai" + name)
+				cache.Remove(CachePaiName + name)
 			}
 			num := winAndLos(gconv.Strings(uspai))
 			st := gconv.String(uspai)
@@ -285,7 +286,7 @@ func (a *chatApi) ending() (err error) {
 			fmt.Println(v)
 			name := gconv.String(v)
 			//获取缓存中的牌
-			pai, _ := cache.Get("pai" + name)
+			pai, _ := cache.Get(CachePaiName + name)
 			/* wi := win{
 				Name: name,
 				Pai:  gconv.Strings(pai),
