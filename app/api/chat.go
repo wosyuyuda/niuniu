@@ -408,6 +408,7 @@ func godian(ints []int) int8 {
 	return gconv.Int8(word(newints))
 }
 
+//看整个数组计算出来有多少点
 func word(newints []int) int {
 	le := len(newints)
 	switch le {
@@ -510,7 +511,7 @@ func fapai(pai []string) (uspai []string, newpai []string) {
 	return
 }
 
-//得到一个随机数
+//得到一个随机数,用于获取牌的位置
 func ra(i int) (j int) {
 	rand.Seed(time.Now().UnixNano())
 	j = rand.Intn(i)
