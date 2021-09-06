@@ -202,7 +202,7 @@ func (a *chatApi) WebSocket(r *ghttp.Request) {
 			if msg.Data != nil {
 				dd := gconv.String(msg.Data)
 				//fmt.Println(gconv.String(msg.Data)),并且名称不能重复
-				if dd == "111" && paiusers.Size() != 2 {
+				if dd == "111" && paiusers.Size() != 2 && !isRepeat(name) {
 					//如果用户输入111,那么返回
 					paiusers.Set(ws, name) //把用户加到组里面,如果人数满3人,就开始发牌,并且清空原来的数组
 					if paiusers.Size() == 2 {
@@ -335,20 +335,18 @@ func (a *chatApi) ending() (err error) {
 			}
 			userpai = append(userpai, u)
 		}
-
 	})
-	fmt.Printf("\n最大的牌是%+v", maxu)
-	fmt.Printf("\n全部的牌是%+v", userpai)
 	//开始把两个的牌情况整成数据发送出去
 	for _, v := range userpai {
+		str := res
 		if maxu.Name == v.Name {
-			res += fmt.Sprintf("</br>您赢了%d倍", maxu.Multiple)
+			str += fmt.Sprintf("</br>您赢了%d倍", maxu.Multiple)
 		} else {
-			res += fmt.Sprintf("</br>您输了%d倍", maxu.Multiple)
+			str += fmt.Sprintf("</br>您输了%d倍", maxu.Multiple)
 		}
 		msg := model.ChatMsg{
 			Type: "send",
-			Data: res,
+			Data: str,
 			From: ghtml.SpecialChars("官方发牌员"),
 		}
 		b, _ := gjson.Encode(msg)
