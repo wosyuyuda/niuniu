@@ -54,7 +54,6 @@ var (
 	basepai = []string{"A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"}
 	color   = []string{"黑桃", "红桃", "梅花", "方块"}
 	kin     = []string{"大王", "小王"}
-	allpai  = []string{}
 
 	paiusers = gmap.New(true) // 使用默认的并发安全Map
 	//painame  = gset.NewStrSet(true) // 使用并发安全的Set，用以用户昵称唯一性校验
@@ -62,6 +61,7 @@ var (
 
 //初始化全部的牌,isd判断是否包含大小王,默认包含,如果值为1
 func paiinit(isd ...int) []string {
+	allpai := []string{}
 	for _, v := range color {
 		for _, i := range basepai {
 			allpai = append(allpai, v+i)
@@ -70,6 +70,7 @@ func paiinit(isd ...int) []string {
 	if len(isd) == 0 {
 		allpai = append(allpai, kin...)
 	}
+	//fmt.Println("初始化牌", allpai)
 	return allpai
 }
 
@@ -249,12 +250,14 @@ func isRepeat(name string) (b bool) {
 
 //进入发牌
 func (a *chatApi) writeGroup1() error {
-	pai := paiinit(1) //拿到 去掉大小王的牌
+	pai := []string{}
+	pai = paiinit(1) //拿到去掉大小王的牌
+	fmt.Println("基础的牌是", pai)
 	var b []byte
 	paiusers.RLockFunc(func(m map[interface{}]interface{}) {
 		fmt.Println(m)
 		for user, v := range m {
-			fmt.Println(v)
+
 			name := gconv.String(v)
 			uspai, newpai := fapai(pai)
 			//把牌存个十分钟进缓存
@@ -272,7 +275,6 @@ func (a *chatApi) writeGroup1() error {
 			}
 			b, _ = gjson.Encode(msg)
 			pai = newpai
-
 			user.(*ghttp.WebSocket).WriteMessage(ghttp.WS_MSG_TEXT, b)
 
 		}
@@ -328,7 +330,8 @@ func (a *chatApi) ending() (err error) {
 				Pai:      gconv.Strings(pai),
 				User:     user,
 			}
-			res += name + ":的牌是" + strings.Join(gconv.Strings(pai), ",") + fmt.Sprintf("为:%s,%d倍", niu(num), doub) + "</br>"
+			fmt.Println("当前最大牌", maxpai, "点位是", maxnum)
+			res += name + ":的牌是---" + strings.Join(gconv.Strings(pai), ",") + fmt.Sprintf("----为:%s", niu(num)) + "</br>"
 			//获取胜负情况
 			if num > maxu.Num || (num == maxu.Num && maxnum > maxu.MaxNum) {
 				maxu = u
@@ -370,7 +373,7 @@ func winAndLos(pai []string) (int8, string, int) {
 
 		painum = append(painum, d)
 		if dou > maxnum {
-			maxnum = dou * d //计算最大的点位,
+			maxnum = dou //计算最大的点位,
 			max = v
 		}
 		if d > 10 {
@@ -476,16 +479,18 @@ func dian(s string) (d, dou int) {
 	default:
 		d = gconv.Int(string(rs[2:]))
 	}
+
 	switch string(rs[:2]) {
 	case "黑桃":
-		dou = 60
+		dou = 4
 	case "红桃":
-		dou = 40
+		dou = 3
 	case "梅花":
-		dou = 20
+		dou = 2
 	case "方块":
 		dou = 1
 	}
+	dou = dou * d * 10
 	return
 }
 
