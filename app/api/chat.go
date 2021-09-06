@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"math/rand"
+	"strings"
 
 	"niuniu/app/model"
 
@@ -34,7 +35,7 @@ const (
 	CachePaiName = "pai"
 )
 
-type win struct {
+type UserPai struct {
 	Name      string
 	Num       int8        //点数,0-9为点数,10为牛牛,11为五朵金花
 	WinAndLos int8        //输还是赢,1胜,2负
@@ -200,7 +201,7 @@ func (a *chatApi) WebSocket(r *ghttp.Request) {
 			// 有消息时，群发消息
 			if msg.Data != nil {
 				dd := gconv.String(msg.Data)
-				//fmt.Println(gconv.String(msg.Data))
+				//fmt.Println(gconv.String(msg.Data)),并且名称不能重复
 				if dd == "111" && paiusers.Size() != 2 {
 					//如果用户输入111,那么返回
 					paiusers.Set(ws, name) //把用户加到组里面,如果人数满3人,就开始发牌,并且清空原来的数组
@@ -234,6 +235,18 @@ func (a *chatApi) WebSocket(r *ghttp.Request) {
 	}
 }
 
+//判断用户是否重复输入111
+func isRepeat(name string) (b bool) {
+	paiusers.RLockFunc(func(m map[interface{}]interface{}) {
+		for _, v := range m {
+			if gconv.String(v) == name {
+				b = true
+			}
+		}
+	})
+	return
+}
+
 //进入发牌
 func (a *chatApi) writeGroup1() error {
 	pai := paiinit(1) //拿到 去掉大小王的牌
@@ -243,14 +256,13 @@ func (a *chatApi) writeGroup1() error {
 		for user, v := range m {
 			fmt.Println(v)
 			name := gconv.String(v)
-
 			uspai, newpai := fapai(pai)
 			//把牌存个十分钟进缓存
 			bo, _ := cache.Contains(CachePaiName + name)
 			if bo {
 				cache.Remove(CachePaiName + name)
 			}
-			num := winAndLos(gconv.Strings(uspai))
+			num, _, _ := winAndLos(gconv.Strings(uspai))
 			st := gconv.String(uspai)
 			cache.Set("pai"+name, uspai, 1000*time.Minute)
 			msg := model.ChatMsg{
@@ -265,10 +277,11 @@ func (a *chatApi) writeGroup1() error {
 
 		}
 	})
-	paiusers.Clear()
+	//paiusers.Clear()
 	return nil
 }
 
+//计算有没有牛
 func niu(num int8) string {
 
 	str := ""
@@ -285,6 +298,9 @@ func niu(num int8) string {
 
 //获取发牌结果
 func (a *chatApi) ending() (err error) {
+	userpai := []UserPai{}
+	maxu := UserPai{}
+	res := "</br>" //双的牌
 	paiusers.RLockFunc(func(m map[interface{}]interface{}) {
 		//这里加一个定义谁输谁赢,赢多少倍的数据,
 
@@ -292,45 +308,78 @@ func (a *chatApi) ending() (err error) {
 		for user, v := range m {
 			fmt.Println(v)
 			name := gconv.String(v)
-			//获取缓存中的牌
-			pai, _ := cache.Get(CachePaiName + name)
-			/* wi := win{
-				Name: name,
-				Pai:  gconv.Strings(pai),
-				User: user,
-			} */
-			fmt.Println(pai)
-			num := winAndLos(gconv.Strings(pai))
-			msg := model.ChatMsg{
-				Type: "send",
-				Data: niu(num),
-				From: ghtml.SpecialChars("官方发牌员"),
+			pai, _ := cache.Get(CachePaiName + name)             //获取缓存中的牌
+			num, maxpai, maxnum := winAndLos(gconv.Strings(pai)) //获取牌中的点数,应该再加一个最大的牌
+			doub := 1
+			switch num {
+			case 7, 8, 9:
+				doub = 2
+			case 10:
+				doub = 3
+			case 11:
+				doub = 5
 			}
-			b, _ := gjson.Encode(msg)
-			user.(*ghttp.WebSocket).WriteMessage(ghttp.WS_MSG_TEXT, b)
-
+			u := UserPai{
+				Name:     name,
+				Num:      num,
+				Max:      maxpai,
+				Multiple: int8(doub),
+				MaxNum:   maxnum,
+				Pai:      gconv.Strings(pai),
+				User:     user,
+			}
+			res += name + ":的牌是" + strings.Join(gconv.Strings(pai), ",") + fmt.Sprintf("为:%s,%d倍", niu(num), doub) + "</br>"
+			//获取胜负情况
+			if num > maxu.Num || (num == maxu.Num && maxnum > maxu.MaxNum) {
+				maxu = u
+			}
+			userpai = append(userpai, u)
 		}
 
 	})
+	fmt.Printf("\n最大的牌是%+v", maxu)
+	fmt.Printf("\n全部的牌是%+v", userpai)
+	//开始把两个的牌情况整成数据发送出去
+	for _, v := range userpai {
+		if maxu.Name == v.Name {
+			res += fmt.Sprintf("</br>您赢了%d倍", maxu.Multiple)
+		} else {
+			res += fmt.Sprintf("</br>您输了%d倍", maxu.Multiple)
+		}
+		msg := model.ChatMsg{
+			Type: "send",
+			Data: res,
+			From: ghtml.SpecialChars("官方发牌员"),
+		}
+		b, _ := gjson.Encode(msg)
+		v.User.(*ghttp.WebSocket).WriteMessage(ghttp.WS_MSG_TEXT, b)
+	}
+	//开始计算谁输谁赢,正常只比点数,如果点数一样,那么比牌大小
 	paiusers.Clear()
 	return
 }
 
-//判断胜负,all是胜者的,win是个体的
-func winAndLos(pai []string) int8 {
+//获取牌的点位与最大牌跟最大的点数
+func winAndLos(pai []string) (int8, string, int) {
 	//拿到具体的牌后,开始计算倍数与点数
-	//
+	max := ""
+	maxnum := 0
 	jin := 0
 	painum := []int{}
 	num := int8(0)
 	for _, v := range pai {
-		d := dian(v)
+		d, dou := dian(v) //获取牌的点数与倍数,计算点与牌大小
 
 		painum = append(painum, d)
+		if dou > maxnum {
+			maxnum = dou * d //计算最大的点位,
+			max = v
+		}
 		if d > 10 {
 			jin++
 			d = 10
 		}
+
 		num += int8(d)
 	}
 	//五朵金花的
@@ -340,7 +389,7 @@ func winAndLos(pai []string) int8 {
 		//开始正式计算点数
 		num = godian(painum)
 	}
-	return num
+	return num, max, maxnum
 }
 
 //开始计算是否为点数与牛牛
@@ -370,7 +419,7 @@ func word(newints []int) int {
 			return 10
 		}
 		return n
-	default:
+	case 3, 4, 5:
 		//如果是有四五张,那么再加一个循环计算
 		in := fourAndFive(newints)
 		if len(in) > 2 {
@@ -378,12 +427,14 @@ func word(newints []int) int {
 		}
 		return word(in)
 	}
+	return 11
 }
 
 //把两两相加,三个相加为10的处理掉
 func fourAndFive(ints []int) []int {
 	//先检查一下有没有两两相加为十的
 	le := len(ints)
+	fmt.Printf("牌的长度为%d", le)
 	for i := 0; i < le-2; i++ {
 		for j := i + 1; j < le-1; j++ {
 			for o := j + 1; o < le; o++ {
@@ -392,8 +443,7 @@ func fourAndFive(ints []int) []int {
 					ints = append(ints[:o], ints[o+1:]...)
 					ints = append(ints[:j], ints[j+1:]...)
 					ints = append(ints[:i], ints[i+1:]...)
-					i = le
-					break
+					return ints
 				}
 			}
 		}
@@ -414,7 +464,7 @@ func fourAndFive(ints []int) []int {
 }
 
 //1-10为具体点数,11 12 13分别为jqk为花
-func dian(s string) (d int) {
+func dian(s string) (d, dou int) {
 	rs := []rune(s)
 	switch string(rs[2:]) {
 	case "A":
@@ -427,7 +477,16 @@ func dian(s string) (d int) {
 		d = 13
 	default:
 		d = gconv.Int(string(rs[2:]))
-
+	}
+	switch string(rs[:2]) {
+	case "黑桃":
+		dou = 60
+	case "红桃":
+		dou = 40
+	case "梅花":
+		dou = 20
+	case "方块":
+		dou = 1
 	}
 	return
 }
