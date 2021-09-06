@@ -250,9 +250,8 @@ func isRepeat(name string) (b bool) {
 
 //进入发牌
 func (a *chatApi) writeGroup1() error {
-	pai := []string{}
-	pai = paiinit(1) //拿到去掉大小王的牌
-	fmt.Println("基础的牌是", pai)
+	pai := paiinit(1) //拿到去掉大小王的牌
+	//fmt.Println("基础的牌是", pai)
 	var b []byte
 	paiusers.RLockFunc(func(m map[interface{}]interface{}) {
 		fmt.Println(m)
