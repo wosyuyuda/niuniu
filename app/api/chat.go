@@ -427,7 +427,7 @@ func word(newints []int) int {
 		}
 		return word(in)
 	}
-	return 11
+	return 10
 }
 
 //把两两相加,三个相加为10的处理掉
