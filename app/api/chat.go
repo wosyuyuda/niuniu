@@ -489,7 +489,7 @@ func dian(s string) (d, dou int) {
 	case "方块":
 		dou = 1
 	}
-	dou = dou * d * 10
+	dou = dou + d*10
 	return
 }
 
